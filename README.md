@@ -5,19 +5,33 @@
 
 Mobile layout fixes for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI.
 
-A pure client-side CSS overlay that repairs the worst mobile breakages on narrow (≤700px viewport) screens, without touching any product source:
+A pure client-side overlay (CSS plus a few reversible click listeners) that repairs the worst mobile breakages on narrow (≤700px viewport) screens, without touching any product source.
 
-- Settings panel becomes a full-screen column layout instead of a squeezed desktop layout
-- Directory-picker footer (Cancel / Confirm) pinned to one bottom row
-- Sidebar opens full-screen instead of squeezing the conversation
-- Settings plugin navigation (4 buttons) fits on a single row
-- Session-log button collapses to an icon
-- Model name hidden in the composer (chevron only)
-- Dropdowns / popups / menus render centered
+## Feature list
+
+### Original features (up to v1.0.2)
+
+**CSS fixes** (`@media (max-width: 700px)`):
+
+1. **Full-screen settings panel** — stacked column layout instead of a squeezed desktop layout; settings plugin navigation fits on a single row
+2. **Session-log button collapses to an icon** — header button becomes a 32px circle, label kept for screen readers only
+3. **Slimmer composer model select** — model name / effort text hidden, chevron only (the click still opens the picker)
+4. **Centered popups** — dropdowns / popups anchored to the composer render as centered dialogs instead of clipping off-screen
+5. **Top-bar breadcrumbs hidden** — session title breadcrumbs no longer crowd the top bar
+6. **Directory-picker footer pinned** — Cancel / Confirm stay on one stable bottom row
+7. **Floating sidebar** — the grid keeps a fixed 56px rail so the conversation is never squeezed; the expanded sidebar floats above the content. No `transform` on purpose, so the settings modal is never trapped inside the drawer
+
+**JS behaviors**:
+
+8. **Tap outside to collapse** — with the sidebar floating open, any click landing outside the sidebar column collapses it (≤768px, capture phase, ahead of product handlers; the settings modal renders inside the sidebar DOM and does not collapse it)
+
+### Added in this round
+
+9. **Tooltips hidden** (v1.0.3) — no `role="tooltip"` bubble is shown at ≤700px. Touch has no hover: tapping a button focuses it, the product Tooltip primitive pops instantly and stays until blur (e.g. the sidebar toggle's "Collapse sidebar" tip). Buttons keep their `aria-label`s, so screen readers are unaffected
 
 ## How it works
 
-The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest. It injects one `<style>` tag with `@media (max-width: 700px)` overrides targeting the product's stable `data-slot` attributes, and removes the tag on unload — fully reversible.
+The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest. It injects one `<style>` tag with `@media (max-width: 700px)` overrides targeting the product's stable `data-slot` / `role` attributes,  and removes the tag on unload — fully reversible.
 
 ## Requirements
 
@@ -37,7 +51,7 @@ dsh plugin --profile web add dsh-web-mobile-fix
 (No npm / local development — point pnpm at the repo instead:
 
 ```sh
-dsh plugin --profile web add github:AcidGr/dsh-web-mobile-fix
+dsh plugin --profile web add github:gmugu/dsh-web-mobile-fix
 ```
 )
 
