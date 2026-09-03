@@ -28,10 +28,11 @@ A pure client-side overlay (CSS plus a few reversible click listeners) that repa
 ### Added in this round
 
 9. **Tooltips hidden** (v1.0.3) — no `role="tooltip"` bubble is shown at ≤700px. Touch has no hover: tapping a button focuses it, the product Tooltip primitive pops instantly and stays until blur (e.g. the sidebar toggle's "Collapse sidebar" tip). Buttons keep their `aria-label`s, so screen readers are unaffected
+10. **Sidebar auto-collapses after picking a session** (v1.1.0) — floating mode only (≤700px): tapping a session row, a search result, or a "new session" button (including the workspace-row "+") collapses the sidebar right after, saving one manual close. Deliberately excluded: the rows' "…" action buttons (they only open a menu) and workspace group rows (they only fold/unfold). **No effect above 700px** — PCs and tablets keep the stock behavior exactly
 
 ## How it works
 
-The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest. It injects one `<style>` tag with `@media (max-width: 700px)` overrides targeting the product's stable `data-slot` / `role` attributes,  and removes the tag on unload — fully reversible.
+The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest. It injects one `<style>` tag with `@media (max-width: 700px)` overrides targeting the product's stable `data-slot` / `role` attributes, and registers capture-phase document listeners: `click` handles tap-outside collapse and collapse after an in-sidebar session action (through the `layout` service's `toggleSidebar()`). The style tag and listeners are all removed by the plugin's unload cleanup — fully reversible.
 
 ## Requirements
 

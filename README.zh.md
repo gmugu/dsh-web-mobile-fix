@@ -27,10 +27,11 @@
 ### 本次新增
 
 9. **隐藏 Tooltip 气泡**（v1.0.3）— ≤700px 下不再显示任何 `role="tooltip"` 气泡。触屏没有 hover，点按钮会让它获得焦点，产品 Tooltip 原语立即弹出气泡且焦点不丢就不消失（如右上角「折叠侧边栏」tip）；隐藏后按钮 `aria-label` 保留，读屏不受影响
+10. **侧栏内选会话后自动收起**（v1.1.0）— 仅 ≤700px 浮层模式：点会话行、搜索结果项或「新会话」按钮（含工作区行「+」）后，侧栏自动收起，省掉一次手动关闭。刻意排除：会话行「…」操作按钮（只弹菜单不开会话）、工作区分组折叠行（只折叠/展开分组）。**>700px 完全不生效**——PC 与平板行为零变化
 
 ## 工作原理
 
-插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；；插件卸载时标签自动移除——完全可逆。
+插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；另注册 capture 阶段的 document 监听：`click` 负责点侧栏外收起与侧栏内选会话后收起（通过 `layout` 服务的 `toggleSidebar()`）。样式标签与监听统一在插件卸载清理中移除——完全可逆。
 
 ## 兼容性
 
