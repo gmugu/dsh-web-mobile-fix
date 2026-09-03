@@ -28,10 +28,11 @@
 
 9. **隐藏 Tooltip 气泡**（v1.0.3）— ≤700px 下不再显示任何 `role="tooltip"` 气泡。触屏没有 hover，点按钮会让它获得焦点，产品 Tooltip 原语立即弹出气泡且焦点不丢就不消失（如右上角「折叠侧边栏」tip）；隐藏后按钮 `aria-label` 保留，读屏不受影响
 10. **侧栏内选会话后自动收起**（v1.1.0）— 仅 ≤700px 浮层模式：点会话行、搜索结果项或「新会话」按钮（含工作区行「+」）后，侧栏自动收起，省掉一次手动关闭。刻意排除：会话行「…」操作按钮（只弹菜单不开会话）、工作区分组折叠行（只折叠/展开分组）。**>700px 完全不生效**——PC 与平板行为零变化
+11. **键盘不再挡输入框**（v1.2.0）— iOS 与 Android Chrome 弹软键盘时只缩「可视视口」、布局视口不变，贴底的输入框会整个留在键盘后面（点输入框时、以及带着键盘切会话时都会发生）。插件监听 `visualViewport` 的 resize/scroll，把键盘高度镜像进 `--mobilefix-kb`，≤700px 下把 app 外壳抬升相应高度，输入框始终悬在键盘上方、消息区同步变短；键盘收起、桌面窗口、外接键盘时变量清空，规则等同原样，>100px 的阈值过滤双指缩放噪声
 
 ## 工作原理
 
-插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；另注册 capture 阶段的 document 监听：`click` 负责点侧栏外收起与侧栏内选会话后收起（通过 `layout` 服务的 `toggleSidebar()`）。样式标签与监听统一在插件卸载清理中移除——完全可逆。
+插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；另注册 capture 阶段的 document 监听：`click` 负责点侧栏外收起与侧栏内选会话后收起（通过 `layout` 服务的 `toggleSidebar()`）；并监听 `visualViewport` 的 resize/scroll，把软键盘高度镜像进 `--mobilefix-kb` 变量供规则 9 抬升外壳。样式标签与全部监听统一在插件卸载清理中移除——完全可逆。
 
 ## 兼容性
 
