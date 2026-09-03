@@ -1,6 +1,6 @@
 {
   "name": "dsh-web-mobile-fix",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "Mobile layout fixes for the DeepSeek Harness Web UI: settings panel, popups, sidebar, session header, and tooltips on narrow (≤700px) screens. Pure client-side CSS overlay.",
   "license": "MIT",
   "type": "module",
