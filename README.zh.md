@@ -37,10 +37,11 @@
 17. **限制页面缩放，输入聚焦不再自动放大**（v1.5.2）— iOS 会对聚焦时计算字号小于 16px 的输入框自动放大页面（排队重命名、侧栏搜索、应答框、设置页输入等都是 13px，所以表现为「有时候突然放大」）。不改任何字号：≤700px 下给 viewport meta 追加 `maximum-scale=1`，聚焦输入框的自动放大被抑制；用户双指捏合缩放不受影响（iOS 无障碍策略始终允许捏合）；卸载恢复原始 meta；>700px 零变化
 18. **锁定页面级滚动**（v1.5.3）— 应用是 100% 高的全屏外壳，所有滚动都应发生在内部区域（会话列表、侧栏、设置页），但 iOS 仍允许页面本体上下橡皮筋滚动，且在选择面板/键盘弹出后可能卡在错位位置无法恢复。≤700px 下锁定 `html/body`（`overflow: hidden` + `overscroll-behavior: none`），页面本体不再滚动；内部滚动容器不受影响，双指捏合缩放属视口手势也不受影响
 19. **第三方任务看板弹层适配手机**（未发布）— `@linxin666/dsh-client-ui-task-board` 的看板视图挂在中列内并使用 `container-type: inline-size`，该布局遏制会把弹层的 `position: fixed` backdrop 困在中列矩形里，而看板自己的 ≤768px 移动端 CSS 却按视口单位（`100vw`/`100dvh`）定尺寸——在侧栏固定 56px 的手机上恰好比真实包含块宽 56px。表现为：新建任务弹层左缘钻到栏条底下，所有 label 被拦腰裁断。修复方式：只要看板视图内存在弹层（modal backdrop 或任务详情），就把看板视图本身提升为侧栏之上的 fixed 全视口层（`z-index` 1200）——遏制随之按真实视口测量，看板自己的移动端 CSS 即恢复正确；弹层关闭时 `:has()` 失配，视图自动回到中列。纯 CSS、零 JS；未安装该第三方插件时选择器不命中、完全惰性；>700px 零变化
+20. **点发送后自动收起软键盘**（v1.7.0）— 产品的每个输入框按钮都在 `mousedown` 上保焦（防默认 + 回焦），点 ↑ 发送后焦点从不离开输入框，软键盘一直开着。现在 ≤700px 下点发送按钮（aria-label 发送消息/Send message，zh/en 全字典；运行中的方形「停止生成」按钮标签不同、永不匹配，停止后键盘保留可继续输入）不拦截事件、提交照常，并在 capture 手势内**同步** blur 输入框收起键盘——blur 必须落在用户手势上下文内，推迟到 `setTimeout(0)` 的话 iOS 会无视（真机实测）；另以 0/120/300ms 补刀与既有回焦抑制窗兜底。键盘落下后 window/html/body 滚动归零，`--mobilefix-kb` 随之自动回落。>700px 零变化
 
 ## 工作原理
 
-插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；另注册 capture 阶段的 document 监听：`click` 负责点侧栏外收起、侧栏内选会话后收起、「+」按钮的附件拦截与输入框 Enter 的轻点/长按判定（收起通过 `layout` 服务的 `toggleSidebar()`），`focusin` 负责吞掉切会话后落在输入框上的自动聚焦；并监听 `keydown`/`keyup` 实现轻点发送与长按换行，并把 `enterkeyhint` 设为 send；同时监听 `visualViewport` 的 resize/scroll，把软键盘高度镜像进 `--mobilefix-kb` 变量供规则 9 抬升外壳。样式标签与全部监听统一在插件卸载清理中移除——完全可逆。
+插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签，内容是针对产品稳定 `data-slot` / `role` / `aria-*` / `data-*` 语义属性的 `@media (max-width: 700px)` 覆盖；另注册 capture 阶段的 document 监听：`click` 负责点侧栏外收起、侧栏内选会话后收起、「+」按钮的附件拦截、以及发送按钮的收键盘钩子——点 ↑ 后在手势内同步 blur 输入框，软键盘随发送收起（收起侧栏通过 `layout` 服务的 `toggleSidebar()`），`focusin` 负责吞掉切会话后落在输入框上的自动聚焦（发送后的短抑制窗复用同一机制）；`keydown`/`beforeinput` 把回车重定为纯换行（`enterkeyhint` 设为 enter，发送只走 ↑ 按钮）；同时监听 `visualViewport` 的 resize/scroll，把软键盘高度镜像进 `--mobilefix-kb` 变量供规则 9 抬升外壳。样式标签与全部监听统一在插件卸载清理中移除——完全可逆。
 
 ## 兼容性
 
