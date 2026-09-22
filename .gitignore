@@ -1,3 +1,5 @@
 node_modules/
 *.log
 .npmrc
+docs/client-zh.js
+.verify/
