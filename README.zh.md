@@ -2,9 +2,9 @@
 
 [English](README.md) | **简体中文**
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI 的移动端布局修复插件。
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI 的移动端修复插件。
 
-纯客户端覆盖层（CSS + 少量可逆的 document 监听），在窄屏（视口 ≤700px）下修复最影响使用的移动端问题，完全不改动产品源码。当前基线：**v1.11.0**，针对 dsh **0.2.0-rc.2**（0.1.5+ 钩子组）。
+纯客户端覆盖层（CSS + 少量可逆的 document 监听），在窄屏（视口 ≤700px）下修复最影响使用的移动端问题，完全不改动产品源码。**v1.12.0** 起并入了原 [dsh-terminal-keys](https://github.com/gmugu/dsh-terminal-keys) 插件：Web 终端的触屏按键面板。当前基线：**v1.12.0**，针对 dsh **0.2.0-rc.2**（0.1.5+ 钩子组；终端面板需要 rc 线的终端 API）。
 
 ## 功能清单
 
@@ -33,9 +33,18 @@
 16. **「+」打开命令菜单，不再弹键盘** — 切换命令菜单时产品会主动聚焦草稿（按钮 `onClick` 与 `mousedown` 上都会聚焦编辑器），每次点「+」都会弹出软键盘。插件在该次点击上结束键盘会话，并把短抑制窗（与发送流程同一机制）内落下的每一次重聚焦立即 blur——菜单照常打开、键盘保持收起。主动点输入框仍正常弹键盘
 17. **侧栏行第一次点按即生效** — 工作区/会话行是 HTML5 draggable（拖拽排序，桌面手势）；iOS 会把落在可拖拽元素上的触摸引入拖拽判定，吞掉（或加倍）合成 click，第一次点按毫无反应。触摸 `pointerdown` 时、拖拽判定开始前，先把该行的 `draggable` 标志摘掉：点按即恢复为普通点击。React 重渲染会恢复该属性，下一次 pointerdown 再摘。行内按钮从来不受影响
 
+### 终端按键（并入自 dsh-terminal-keys）
+
+18. **Web 终端触屏按键面板** — 手持指针（粗指针 / 无 hover）且右栏终端标签在前台时，出现一个可拖动的 body 级按键卡片，补足手机键盘缺失的键：**Esc / Tab / Ctrl / Alt / ← ↑ ↓ →**，固定 4×2 网格，方向键长按连发。卡片 z-index 2000 挂在 body 层，右栏面板展开时也始终可点；终端标签、侧栏或触控能力消失的瞬间面板随之隐藏。位置是唯一的用户拖动锚点，存于 `localStorage`（`terminalKeys:position`，按比例保存——旋转屏幕后仍在界内）；「当前无激活终端 / 终端暂不可写入」以闪烁行提示，而不是静默失败
+19. **Ctrl/Alt 粘滞键可与自带键盘组合** — Ctrl 与 Alt 互斥：点亮一个自动释放另一个；粘滞期间在终端表面敲下的裸键（实体键盘 keydown，或软键盘落在 xterm textarea 上的 beforeinput）都会在终端消费前改写成对应的控制/Meta 序列——字母变 Ctrl+字母 / Alt+字母，方向键变带修饰的 CSI 序列，Backspace 变 Ctrl+Backspace / Alt+Backspace。修饰键用一次即自释放，面板隐藏时自动解除
+
 ## 工作原理
 
-插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载。它注入一个 `<style>` 标签（`@media (max-width: 700px)` 覆盖），并注册 capture 阶段的 document 监听，全部挂在产品稳定契约上——原生 `data-*` 语义属性（`data-shell-overlay`、`data-composer-card`、`data-composer-seat`、`data-composer-input`、`data-plan-review-key`、`data-plan-review-scroll`、`data-dockkit-*`、`data-sidebar-*`）、CSS-module 类名后缀（`rowActions`、`logoRow`、`root`、`footerBar`）以及 role/aria 钩子：
+插件带一个浏览器端（`exports["./client"]`，通过 `dsh.client.platform: "web"` 声明），由 client-modules 扫描器发现并随启动清单加载——一个模块一个文件：`lib/client.js` 同时容纳 CSS 覆盖层、全部 document 监听，以及内联的终端按键面板（自带 locale 表、PTY 按键序列、粘滞修饰键改写和 body 级部件，由 `apply()` 末尾调用的 `applyTerminalKeys(ctx)` 挂载）。
+
+模块声明 `inject: ["slots", "locale", "sidebarRight", "webTerminals"]`——终端面板消费这些原生 Web 应用服务；移动修复本身一个都不需要。样式标签、全部监听与 viewport meta 统一在插件卸载清理中还原——完全可逆。
+
+各行为挂在产品稳定契约上——原生 `data-*` 语义属性（`data-shell-overlay`、`data-composer-card`、`data-composer-seat`、`data-composer-input`、`data-plan-review-key`、`data-plan-review-scroll`、`data-dockkit-*`、`data-sidebar-*`）、CSS-module 类名后缀（`rowActions`、`logoRow`、`root`、`footerBar`）以及 role/aria 钩子：
 
 - `click` — 点侧栏外收起、侧栏内选会话后收起（经 `layout` 服务的 `toggleSidebar()`，通过可选 ctx 查找获取）；「+」键盘守卫；发送按钮收键盘钩子
 - `focusin` / `focusout` — 键盘会话（仅输入框持有焦点时允许抬升）；`enterkeyhint` 提示；输入框聚焦抑制窗（会话动作后 2s、发送与「+」后 600ms）
@@ -50,7 +59,8 @@
 
 ## 兼容性
 
-- 需要 Harness Web profile（`dsh --profile web`）；在 **0.1.6-alpha.2** 上测试，针对 0.1.5+ 的钩子组（Lexical 编辑器自 0.1.2-rc.1 起）
+- 需要 Harness Web profile（`dsh --profile web`）；在 **0.1.6-alpha.2** 上测试，针对 0.1.5+ 的钩子组（Lexical 编辑器自 0.1.2-rc.1 起）。并入的终端按键面板需要 **0.2.0-rc** 线的 `sidebarRight` / `webTerminals` 客户端服务（Web 应用的基线包）
+- 若此前安装过独立的 `dsh-terminal-keys` 插件，请移除或禁用——本插件已内置该面板，两者同时启用会重复出现
 - 选择器针对产品稳定契约（data-* 语义、类名后缀、role），同版本线内稳定；产品大改版后可能需要小幅调整
 
 ## 安装
@@ -104,7 +114,7 @@ ln -sfn ../../plugins/mobile-fix "$PROFILE/node_modules/@dsh-profile/mobile-fix"
 
 ## 验证
 
-用手机宽度窗口打开 Web UI——设置面板、侧边栏、弹层应已适配移动端。DevTools 里注入的标签是 `style[data-plugin="dsh-web-mobile-fix"]`，头部注释标有运行版本。
+用手机宽度窗口打开 Web UI——设置面板、侧边栏、弹层应已适配移动端。DevTools 里注入的标签是 `style[data-plugin="dsh-web-mobile-fix"]`，头部注释标有运行版本。终端面板：在触屏（或模拟触屏）窗口于右栏打开终端标签——按键卡片 `.tk-card` 出现，方向键写入 pty，Ctrl/Alt 互斥点亮。
 
 ## 回滚
 

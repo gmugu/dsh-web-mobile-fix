@@ -3,9 +3,9 @@
 
 **English** | [简体中文](README.zh.md)
 
-Mobile layout fixes for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI.
+Mobile fixes for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI.
 
-A pure client-side overlay (CSS plus a few reversible document listeners) that repairs the worst mobile breakages on narrow (≤700px viewport) screens, without touching any product source. Current baseline: **v1.11.0**, targeting dsh **0.2.0-rc.2** (0.1.5+ hook set).
+A pure client-side overlay (CSS plus a few reversible document listeners) that repairs the worst mobile breakages on narrow (≤700px viewport) screens, without touching any product source. Since **v1.12.0** it also absorbs the former [dsh-terminal-keys](https://github.com/gmugu/dsh-terminal-keys) plugin: a touch key panel for the Web terminal. Current baseline: **v1.12.0**, targeting dsh **0.2.0-rc.2** (0.1.5+ hook set; the terminal panel needs the rc-line terminal APIs).
 
 ## Feature list
 
@@ -33,9 +33,18 @@ A pure client-side overlay (CSS plus a few reversible document listeners) that r
 16. **"+" opens the command menu — without the keyboard** — toggling the command menu focuses the draft (the product focuses the editor in the button's `onClick` and on `mousedown`), which would pop the soft keyboard on every tap. The plugin ends any keyboard session on that tap and blurs every refocus landing inside a short suppression window (the same mechanism the send flow uses), so the menu opens with the keyboard closed. Tapping the input itself still opens the keyboard normally
 17. **First tap on sidebar rows works** — workspace/session rows are HTML5 draggable (drag-to-reorder, a desktop gesture); iOS routes a touch on a draggable element through drag detection and swallows (or doubles) the synthesized click, so the first tap switches nothing. The `draggable` flag is stripped from the row under a touch `pointerdown`, before drag detection starts: the tap then behaves like a plain click. React restores the attribute on re-render; the next pointerdown strips it again. Buttons inside the rows were never affected
 
+### Terminal keys (merged from dsh-terminal-keys)
+
+18. **Touch key panel for the Web terminal** — on handheld pointers (coarse pointer / no hover), while a right-sidebar terminal tab is in front, a draggable body-level card offers the keys a phone keyboard lacks: **Esc / Tab / Ctrl / Alt / ← ↑ ↓ →** in a fixed 4×2 grid. Arrows auto-repeat when held. The panel is z-index 2000 at body level, so it stays reachable above the expanded right-panel panes; it hides the moment the terminal tab, the sidebar, or the touch pointer goes away. Its position is one user-dragged anchor stored in `localStorage` (`terminalKeys:position`, proportional — survives rotation), and a flash line reports "no active terminal / not writable" instead of failing silently
+19. **Sticky Ctrl/Alt modifiers compose with your own keyboard** — Ctrl and Alt are mutually exclusive stickies: arming one releases the other, and any armed bare key typed into the terminal surface (physical keydown, or a soft keyboard's beforeinput on the xterm textarea) is rewritten into the proper control/Meta sequence before the terminal consumes it — letters become Ctrl+letter / Alt+letter, arrows become modifier-decorated CSI sequences, Backspace becomes Ctrl+Backspace / Alt+Backspace. The modifier releases itself after one use, and disarms whenever the panel hides
+
 ## How it works
 
-The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest. It injects one `<style>` tag with `@media (max-width: 700px)` overrides and registers capture-phase document listeners, all keyed to the product's stable contracts — stock `data-*` semantics (`data-shell-overlay`, `data-composer-card`, `data-composer-seat`, `data-composer-input`, `data-plan-review-key`, `data-plan-review-scroll`, `data-dockkit-*`, `data-sidebar-*`), CSS-module class suffixes (`rowActions`, `logoRow`, `root`, `footerBar`), and role/aria hooks:
+The plugin ships a browser half (`exports["./client"]`, declared via `dsh.client.platform: "web"`), discovered by the client-modules scanner and loaded from the boot manifest — one module, one file: `lib/client.js` holds the CSS overlay, every document listener, and the inlined terminal key panel (its own locale tables, PTY key sequences, sticky-modifier rewriting, and the body-level widget, mounted by `applyTerminalKeys(ctx)` at the end of `apply`).
+
+The module declares `inject: ["slots", "locale", "sidebarRight", "webTerminals"]` — consumed by the terminal panel (stock Web-app services); the mobile fixes need none. Everything is reverted by the plugin's unload cleanup — fully reversible.
+
+The behaviors hook the product's stable contracts — stock `data-*` semantics (`data-shell-overlay`, `data-composer-card`, `data-composer-seat`, `data-composer-input`, `data-plan-review-key`, `data-plan-review-scroll`, `data-dockkit-*`, `data-sidebar-*`), CSS-module class suffixes (`rowActions`, `logoRow`, `root`, `footerBar`), and role/aria hooks:
 
 - `click` — tap-outside collapse and collapse after an in-sidebar session action (through the `layout` service's `toggleSidebar()`, fetched via an optional ctx lookup); the "+" keyboard guard; the send-button keyboard hide
 - `focusin` / `focusout` — the keyboard session (the lift is only armed while the composer input holds focus); the `enterkeyhint` hint; the composer-focus suppression windows (2s after session actions, 600ms after send and after "+")
@@ -50,7 +59,8 @@ The style tag, every listener, and the viewport meta are reverted by the plugin'
 
 ## Requirements
 
-- DeepSeek Harness Web profile (`dsh --profile web`); tested against **0.1.6-alpha.2** and targeting the 0.1.5+ hook set (Lexical composer since 0.1.2-rc.1)
+- DeepSeek Harness Web profile (`dsh --profile web`); tested against **0.1.6-alpha.2** and targeting the 0.1.5+ hook set (Lexical composer since 0.1.2-rc.1). The merged terminal key panel needs the **0.2.0-rc** line's `sidebarRight` / `webTerminals` client services (baseline packages of the Web app)
+- If the standalone `dsh-terminal-keys` plugin was installed before, remove or disable it — this plugin now provides that panel, and running both would duplicate it
 - Selectors target stable product contracts (data-* semantics, class suffixes, roles); they are stable within a version line but may need small updates after a major product revamp
 
 ## Install
@@ -104,7 +114,7 @@ ln -sfn ../../plugins/mobile-fix "$PROFILE/node_modules/@dsh-profile/mobile-fix"
 
 ## Verify
 
-Open the Web UI on a phone-width window — the settings panel, sidebar, and popups should be mobile-adapted. In DevTools the injected tag is `style[data-plugin="dsh-web-mobile-fix"]`; its header comment shows the running version.
+Open the Web UI on a phone-width window — the settings panel, sidebar, and popups should be mobile-adapted. In DevTools the injected tag is `style[data-plugin="dsh-web-mobile-fix"]`; its header comment shows the running version. For the terminal panel: open a terminal tab in the right sidebar on a touch (or touch-emulating) window — the key card `.tk-card` appears, arrows write into the pty, and Ctrl/Alt arm exclusively.
 
 ## Rollback
 
