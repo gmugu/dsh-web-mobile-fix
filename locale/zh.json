@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "移动端修复",
+    "description": "DeepSeek Harness Web 窄屏（≤700px）布局修复——设置面板、悬浮侧栏、弹层、软键盘行为——并为 Web 终端内置触屏按键面板（Esc/Tab、Ctrl/Alt 粘滞键、方向键）。"
+  }
+}

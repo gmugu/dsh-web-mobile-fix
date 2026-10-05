@@ -2,19 +2,23 @@
   "name": "dsh-web-mobile-fix",
   "version": "1.12.0",
   "description": "Mobile fixes for the DeepSeek Harness Web UI: layout overlay (settings panel, popups, sidebar, session header, tooltips) plus a touch terminal key panel (Esc/Tab, sticky Ctrl/Alt, arrows) on narrow (≤700px) screens. Pure client-side.",
+  "author": "MuGu",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
   "files": [
     "lib",
+    "locale/*.json",
     "cordis.patch.yml"
   ],
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     },

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mobile fixes",
+    "description": "Layout repairs for the DeepSeek Harness Web UI on narrow (≤700px) screens — settings panel, floating sidebar, popups, soft-keyboard behaviors — plus a touch terminal key panel (Esc/Tab, sticky Ctrl/Alt, arrows) for the Web terminal."
+  }
+}
