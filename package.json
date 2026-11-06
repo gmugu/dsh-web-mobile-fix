@@ -1,7 +1,7 @@
 {
   "name": "dsh-web-mobile-fix",
-  "version": "1.12.0",
-  "description": "Mobile fixes for the DeepSeek Harness Web UI: layout overlay (settings panel, popups, sidebar, session header, tooltips) plus a touch terminal key panel (Esc/Tab, sticky Ctrl/Alt, arrows) on narrow (≤700px) screens. Pure client-side.",
+  "version": "1.13.0",
+  "description": "Mobile fixes for the DeepSeek Harness Web UI: Enter→newline, terminal keyboard lift that follows the pty caret, open-in-app button hiding, right-panel strip cleanup and page scroll lock on narrow (≤700px) screens, plus a touch terminal key panel (Esc/Tab, sticky Ctrl/Alt, arrows). Pure client-side.",
   "author": "MuGu",
   "license": "MIT",
   "type": "module",
@@ -47,6 +47,6 @@
   ],
   "engines": {
     "node": ">=24",
-    "dsh": ">=0.2.0-rc.2"
+    "dsh": ">=0.2.2-rc.1"
   }
 }
